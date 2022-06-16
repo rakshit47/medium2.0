@@ -3,7 +3,9 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const Blog = require("../models/blog");
+const User = require("../models/user")
 
+//Creating Blog
 router.post('/',verifyToken, async (req,res)=>{
     if (!req?.body?.title) throw { status: 404, message: "Title is required" };
     if (!req?.body?.body) throw { status: 404, message: "Body is required" };
@@ -19,6 +21,7 @@ router.post('/',verifyToken, async (req,res)=>{
     res.status(201).json(newBlog);
 })
 
+//Gettin all blogs
 router.get("/", async (req, res) => {
   try {
     const blogs = await Blog.find().populate("userId");
@@ -26,7 +29,6 @@ router.get("/", async (req, res) => {
         const tempBlog = JSON.parse(JSON.stringify(blog));
         delete tempBlog.userId.password;
         return tempBlog;
-        //  console.log(tempBlog)
     } )
     
     res.status(200).json(blogArr);
@@ -35,18 +37,44 @@ router.get("/", async (req, res) => {
   }
 });
 
+//Getting blogs by ID
 router.get('/:id',findBlog, async (req,res)=>{
-    res.send(res.blog);
+    res.send(req.blog);
 })
 
+//Editing Blogs
+router.patch('/:id',verifyToken,findBlog,async (req,res)=>{
+    const myBlog = await Blog.findById(req.blog);
+    try {
+        if (myBlog.userId == req.userId) {
+            // console.log(myBlog.userId);
+            if (req.body.title != null) {
+                await Blog.updateOne({},{title:req.body.title})   
+            }
+            if(req.body.body != null){
+                await Blog.updateOne({},{body:req.body.body})
+            }
+            res.status(200).send(await Blog.findById(req.blog));
+        } else {
+            res.status(403).json({message: "You cannot edit this blog"})
+        }
+    } catch (err) {
+        res.status(500).json({message: err.message})
+    }
+})
+
+//Like API for blogs by ID stroing different users
 router.patch('/like/:id',verifyToken,async (req,res)=>{
     const blog = await Blog.find({_id:req.params.id});
+    console.log(blog)
     try{
             if(blog[0].likes.includes(req.userId)){
-                await Blog.updateOne({},{$pull:{likes: req.userId}});
+                await Blog.updateOne({_id:req.params.id},{$pull:{likes: req.userId}});
+                await User.updateOne({_id:req.userId},{$pull:{myliked: req.params.id}})
                 res.status(200).json({message: "UnLiked"})
             }else{
-                await Blog.updateOne({},{$push:{likes: req.userId}});
+                await Blog.updateOne({_id:req.params.id},{$push:{likes: req.userId}});
+                await User.updateOne({_id:req.userId},{$push:{myliked: req.params.id}})
                 res.status(200).json({message: "Liked"})
             }
     }catch(err){
@@ -54,17 +82,33 @@ router.patch('/like/:id',verifyToken,async (req,res)=>{
         }
 })
 
+//Deleting blogs by ID
+router.delete('/:id',verifyToken,findBlog,async (req,res)=>{
+    const myBlog = await Blog.findById(req.blog);
+    try {
+        if (myBlog.userId == req.userId) {
+            await Blog.deleteOne({_id:myBlog._id})
+            res.status(200).json({message : "Your Blog Delete !"});
+        } else {
+            res.status(200).json({message : "Cannot delete other's Blog"});
+        }
+    } catch (err) {
+        res.status(500).json({message : err.messgae});
+    }
+    // res.status(200).json({message : "Done"});
+})
+
 async function findBlog(req,res,next) {
     let blog;
     try {
         blog = await Blog.findById(req.params.id)
         if(blog == null) {
-            return res.status(404).json({message: "Cannot find Blog"});
+        res.status(404).json({message: "Cannot find Blog"});
         }
     } catch (err) {
-        return res.status(500).json({message: err.message});   
+        res.status(500).json({message: err.message});   
     }
-    res.blog = blog;
+    req.blog = blog;
     next()
 }
 
@@ -81,7 +125,7 @@ function verifyToken(req,res,next){
         })
         next()
     }
-    else rs.sendStatus(403);
+    else res.sendStatus(403);
 }
 
 module.exports = router;

@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const { json } = require("express/lib/response");
-// const User = require('../models/user');
 const User = require("../models/user");
 const Blog = require("../models/blog");
 const jwt = require("jsonwebtoken");
@@ -20,19 +19,6 @@ router.get("/", async (req, res) => {
 //Getting One
 router.get("/:id", getUser, async (req, res) => {
   res.send(res.user);
-  // try{
-  
-  //   // console.log(tempBlog);
-  // })
-  // }catch(err){
-  //   res.status(404).json({message: err.message});
-  // }
-  
-  // if(res.blog.userId == res.user._id){
-  //   res.send(res.blog)
-  // }
-  
-  // res.send(bcrypt.compareSync('Mongoose',res.user.password))
 });
 
 //Creating One
@@ -58,14 +44,12 @@ router.post("/signup", async (req, res) => {
       res.status(201).json({
         token,
       });
-      // res.status(201).json(newUser)
     } else {
       throw { message: "Email already exists" };
     }
     // res.send(users);
   } catch (err) {
     res.status(err?.status || 400).json({ message: err.message });
-    // res.status(489).json({message: 'Email Already exists'})
   }
 });
 
@@ -77,7 +61,6 @@ router.post("/login", async (req, res) => {
       const oldUser = await User.findOne({ email: req.body.email })
       
       if ( !!oldUser ) {
-        // console.log(oldUser);
         if (!bcrypt.compareSync(req.body.password,oldUser.password)) 
         {
             throw { message: "Wrong Password !" };
@@ -92,14 +75,11 @@ router.post("/login", async (req, res) => {
         res.status(201).json({
           token,
         });
-        // res.status(201).json(newUser)
       } else {
         throw { message: "Email doesn't exists" };
       }
-      // res.send(users);
     } catch (err) {
       res.status(err?.status || 400).json({ message: err.message });
-      // res.status(489).json({message: 'Email Already exists'})
     }
   });
 
@@ -127,8 +107,8 @@ router.patch("/:id", getUser, async (req, res) => {
 });
 
 //Deleting One
-router.delete("/:id", async (req, res) => {
-  const userId = req.params.id;
+router.delete("/:id",getUser, async (req, res) => {
+  const userId = req.user;
   try {
     await User.deleteOne({_id: userId});
     await Blog.deleteMany({userId})

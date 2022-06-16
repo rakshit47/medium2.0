@@ -17,6 +17,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         default: 'light'
+    },
+    myliked:{
+        type: Array,
+        ref: 'Blog'
     }
 },{ timestamps: true })
 

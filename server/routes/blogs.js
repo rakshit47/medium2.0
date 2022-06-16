@@ -39,8 +39,16 @@ router.get("/", async (req, res) => {
 
 //Getting blogs by ID
 router.get('/:id',findBlog, async (req,res)=>{
-    res.send(req.blog);
-})
+    // res.send(req.blog);
+    try {
+        const blog = await Blog.findById(req.params.id).populate("userId");
+        const blog2 = JSON.parse(JSON.stringify(blog));
+        delete blog2.userId.password;
+        res.status(200).json(blog2);
+      } catch (err) {
+        res.status(500).json({ message: err.message });
+      }
+});
 
 //Editing Blogs
 router.patch('/:id',verifyToken,findBlog,async (req,res)=>{

@@ -128,7 +128,7 @@ async function getUser(req, res, next) {
   } catch (err) {
      res.status(500).json({ message: err.message });
   }
-  req.user = user;
+  res.user = user;
   next();
 }
 

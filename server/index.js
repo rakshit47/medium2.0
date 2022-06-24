@@ -24,6 +24,4 @@ app.use('/api/blog',blogRouter);
 const commentRouter = require('./routes/comments');
 app.use('/api/comment',commentRouter);
 
-app.listen(8000,()=>{
-    console.log("Server Started");
-});
+app.listen(process.env.PORT || 5000)

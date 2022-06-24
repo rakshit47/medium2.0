@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const User = require("../models/user");
 const Blog = require("../models/blog");
 const jwt = require("jsonwebtoken");
@@ -126,7 +126,7 @@ async function getUser(req, res, next) {
        res.status(404).json({ message: "Cannot find User" });
     }
   } catch (err) {
-     res.status(500), json({ message: err.message });
+     res.status(500).json({ message: err.message });
   }
   req.user = user;
   next();
